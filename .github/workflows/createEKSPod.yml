@@ -8,7 +8,7 @@ jobs:
         steps:
             - name: checkout repo
               uses: actions/checkout@v4
-              
+
             - name: Deploy EKS pods
               run: |
-                kubectl apply -f eks/
+                /home/farhan/bin/kubectl apply -f eks/
