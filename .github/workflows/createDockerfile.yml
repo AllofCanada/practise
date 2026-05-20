@@ -1,0 +1,34 @@
+name: Create Docker Image
+on : workflow_dispatch
+
+jobs:
+    docker-image-build:
+        runs-on: [self-hosted,x64,linux]
+        permissions:
+            id-token: write
+            contents: read
+        steps:
+            - name: checkout repo
+              uses: actions/checkout@v4
+
+            - name: Configure AWS Credentials for China region audience
+              uses: aws-actions/configure-aws-credentials@v6.1.0
+              with:
+                role-session-name: GitHubActionSession
+                aws-region: ca-central-1
+                role-to-assume: ${{secrets.IAM_ROLE}}
+
+            - name: Login to Amazon ECR
+              id: login-ecr
+              uses: aws-actions/amazon-ecr-login@v2
+
+            - name: Build and Push
+              working-directory: docker
+              run: |
+                VERSION=1.0.${{github.run_number}}
+                REPO=541804384520.dkr.ecr.ca-central-1.amazonaws.com/practise
+
+                docker build -t $REPO:$VERSION -t $REPO:latest .
+
+                docker push $REPO:$VERSION
+                docker push $REPO:latest
