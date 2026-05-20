@@ -1,0 +1,40 @@
+CREATE EKS CLUSTER
+eksctl create cluster --name=eksdemo1 --region=ca-central-1 --zones=ca-central-1a,ca-central-1b --without-nodegroup
+
+
+CREATE AND ASSOCIATE IAM OIDC PROVIDER
+eksctl utils associate-iam-oidc-provider --region=ca-central-1 --cluster=eksdemo1 --approve
+
+
+CREATE NODEGROUP 
+eksctl create nodegroup --cluster=eksdemo1 --region=ca-central-1 --name=eksdemo1-ng-private1 --node-type=t3.medium --nodes=2 --nodes-min=2 --nodes-max=4 --node-volume-size=20 --ssh-access  --ssh-public-key=kube-demo  --managed --asg-access --external-dns-access --full-ecr-access --appmesh-access --alb-ingress-access --node-private-networking
+
+
+DELETE EKS CLUSTER
+eksctl delete cluster eksdemo1
+
+
+CREATE SERVICE ACCOUNT FOR LOAD BALANCER
+eksctl create iamserviceaccount --cluster=eksdemo1 --namespace=kube-system --name=aws-load-balancer-controller --attach-policy-arn=arn:aws:iam::541804384520:policy/AWSLoadBalancerControllerIAMPolicy --override-existing-serviceaccounts --approve
+
+
+CREATE SERVICE ACCOUNT FOR ROUTE53
+eksctl create iamserviceaccount --cluster=eksdemo1 --namespace=default --name=external-dns --attach-policy-arn=arn:aws:iam::541804384520:policy/AllowExternalDNSUpdates --override-existing-serviceaccounts --approve
+
+
+FARGATE PROFILE
+eksctl create cluster --name=eksdemo1 --region=ca-central-1 --zones=ca-central-1a,ca-central-1b --without-nodegroup
+
+eksctl get fargateprofile --cluster eksdemo1
+
+eksctl create fargateprofile --cluster eksdemo1 --name fp-demo --namespace fp-dev
+
+
+
+
+
+
+
+
+
+

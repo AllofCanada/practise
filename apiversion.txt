@@ -1,0 +1,44 @@
+
+apiVersion,Kind,Purpose
+v1,Pod,The smallest deployable computing unit.
+v1,Service,Exposes a set of Pods as a network service.
+v1,ConfigMap,Stores non-confidential configuration data in key-value pairs.
+v1,Secret,"Stores sensitive data (passwords, tokens, keys)."
+v1,Namespace,Isolates groups of resources within a single cluster.
+v1,ServiceAccount,Provides an identity for processes running in a Pod.
+v1,PersistentVolume (PV),A piece of storage provisioned by an administrator.
+v1,PersistentVolumeClaim (PVC),A user's request for storage.
+v1,Node,A worker machine in Kubernetes (usually read-only for manifests).
+v1,Endpoints,Defines the IP addresses of pods matching a service selector.
+
+
+
+apiVersion,Kind,Purpose
+apps/v1,Deployment,Manages stateless applications and rolling updates.
+apps/v1,StatefulSet,"Manages stateful applications requiring unique identities (e.g., Databases)."
+apps/v1,DaemonSet,"Ensures a copy of a Pod runs on all (or some) nodes (e.g., Fluentd logs)."
+apps/v1,ReplicaSet,Maintains a stable set of replica Pods running at any given time.
+
+
+apiVersion,Kind,Purpose
+networking.k8s.io/v1,Ingress,Manages external HTTP/HTTPS routing into the cluster.
+networking.k8s.io/v1,IngressClass,Defines which Ingress controller should implement the Ingress.
+networking.k8s.io/v1,NetworkPolicy,Controls traffic flow at the IP block or port level (pod-to-pod firewall).
+
+
+
+apiVersion,Kind,Purpose
+rbac.authorization.k8s.io/v1,Role,Permissions granted within a specific namespace.
+rbac.authorization.k8s.io/v1,ClusterRole,Cluster-wide permissions (or non-namespaced resources).
+rbac.authorization.k8s.io/v1,RoleBinding,Grants the permissions defined in a Role to a user/group/service account.
+rbac.authorization.k8s.io/v1,ClusterRoleBinding,Grants ClusterRole permissions cluster-wide.
+
+apiVersion,Kind,Purpose
+autoscaling/v2,HorizontalPodAutoscaler (HPA),Automatically scales the number of pods based on CPU/Memory usage.
+
+
+
+apiVersion,Kind,Purpose
+storage.k8s.io/v1,StorageClass,"Dynamic storage provisioning profiles (e.g., AWS gp3 vs io2)."
+
+
