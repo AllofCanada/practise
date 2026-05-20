@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app1-deployment
+  labels:
+    app: app1
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: app1
+  template:
+    metadata:
+      labels:
+        app: app1
+    spec:
+      containers:
+        - name: app1
+          image: 541804384520.dkr.ecr.ca-central-1.amazonaws.com/practise:latest
+          ports:
+            - containerPort: 80
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: app1-nodeport-service
+  labels:
+    app: app1-nginx
+  annotations:
+    alb.ingress.kubernetes.io/healthcheck-path: /index.html # <-- Specific to App1
+    alb.ingress.kubernetes.io/healthcheck-port: '80'
+    alb.ingress.kubernetes.io/success-codes: '200'
+    
+#Important Note:  Need to add health check path annotations in service level if we are planning to use multiple targets in a load balancer    
+#    alb.ingress.kubernetes.io/healthcheck-path: /app1/index.html
+spec:
+  type: NodePort
+  selector:
+    app: app1
+  ports:
+    - port: 80
+      targetPort: 80  
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-app1
+  labels:
+    app: app1
+  annotations:
+    alb.ingress.kubernetes.io/load-balancer-name: app1Ingress
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/listen-ports:  '[{"HTTPS": 443}, {"HTTP": 80}]'
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ca-central-1:541804384520:certificate/ad4f601f-0e22-4ad2-9b0c-935f8ab64a2f
+    # alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
+    # alb.ingress.kubernetes.io/healthcheck-port: '80'
+    # alb.ingress.kubernetes.io/healthcheck-path: /index.html
+    # alb.ingress.kubernetes.io/healthcheck-interval-seconds: '15'
+    # alb.ingress.kubernetes.io/success-codes: '200'
+    # alb.ingress.kubernetes.io/unhealthy-threshold-count: '2'
+    # alb.ingress.kubernetes.io/healthy-threshold-count: '2'
+
+spec:
+  ingressClassName: my-aws-ingress-class
+  rules:
+    - host: app1.allofcanada.ca
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: app1-nodeport-service
+                port:
+                  number: 80

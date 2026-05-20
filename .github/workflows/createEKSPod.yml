@@ -1,0 +1,14 @@
+name: Create EKS PODS
+on : workflow_dispatch
+
+
+jobs:
+    eks-pod-build:
+        runs-on: [self-hosted,x64,linux]
+        steps:
+            - name: checkout repo
+              uses: actions/checkout@v4
+              
+            - name: Deploy EKS pods
+              run: |
+                kubectl apply -f eks/
