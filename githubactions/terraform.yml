@@ -1,0 +1,100 @@
+# .github/workflows/terraform.yml
+name: "Terraform AWS Security Group CI/CD"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+# Core permissions required for AWS OIDC authentication and PR commenting
+permissions:
+  id-token: write # Required for requesting the JWT from AWS OIDC
+  contents: read  # Required for checking out the repository code
+  pull-requests: write # Required for posting the plan to PR comments
+
+env:
+  AWS_REGION: "us-east-1"
+  # Replace with your actual AWS IAM OIDC Role ARN
+  AWS_ROLE_ARN: "arn:aws:iam::123456789012:role/github-actions-terraform-role"
+
+jobs:
+  terraform:
+    name: "Terraform Automation"
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the source code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Terraform CLI on the runner
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.5.7" # Pin your exact production version
+
+      # Step 3: Run Code Formatting Check
+      - name: Terraform Format Check
+        run: terraform fmt -check
+
+      # Step 4: Initialize Terraform (Downloads providers/modules)
+      # In a real environment, you need AWS credentials to initialize the backend S3 bucket.
+      # We authenticate first to ensure init works smoothly.
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          audience: sts.amazonaws.com
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+
+      - name: Terraform Init
+        run: terraform init
+
+      # Step 5: Validate HCL Syntax
+      - name: Terraform Validate
+        run: terraform validate
+
+      # Step 6: Scan code for security vulnerabilities using Trivy
+      - name: Security Scan (Trivy)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          hide-progress: true
+          severity: 'HIGH,CRITICAL'
+          exit-code: '1' # Fails the pipeline if a High/Critical security issue is found
+
+      # Step 7: Generate Speculative Plan
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color -out=tfplan
+        continue-on-error: false
+
+      # Step 8: Post the Plan output to the Pull Request (PR only)
+      - name: Post Plan to PR
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        with:
+          script: |
+            const fs = require('fs');
+            const output = `#### Terraform Format and Style 🖌
+            #### Terraform Initialization ⚙️
+            #### Terraform Validation 🤖
+            #### Security Scan (Trivy) 🛡️
+            #### Terraform Plan 📖
+            
+            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
+      # Step 9: Apply changes (Executes ONLY when code is merged to the main branch)
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -input=false tfplan
